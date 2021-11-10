@@ -1,0 +1,189 @@
+\section*{Canonical Correlation Analysis}
+
+The purpose of this section is to analyze the \textit{dtrust} data set, which was compiled from the responses of 3040 residents of Sweden and Poland to questions regarding the residents' trust in the institutions of their country and the EU, and questions about their satisfaction with the government of their particular country. The responses are given on the $0-10$ scale (0 representing no trust or no satisfaction, 10 representing total trust or total satisfaction). The questions, being in two general categories, lend themselves to assessing the relation between trust in institutions and satisfaction with government, which is what will be done in this section. For this, canonical correlation analysis will be used, with the goal of assessing how the three variables representing government satisfaction (\textit{satisf\_economycntry}, \textit{satisf\_nationalgovernment}, \textit{satisf\_democracycntry}) can be explained by the seven variables representing trust in institutions (\textit{trust\_cntryparliament}, \textit{trust\_legalsystem}, \textit{trust\_police}, \textit{trust\_politicians}, \textit{trust\_politicalparties}, \textit{trust\_EUparliament}, \textit{trust\_UN}).
+
+The loadings obtained by conducting canonical correlation analysis on the standardized variables represent correlations between the canonical variates and the variables (the trust and satisfaction questions). There are three initial canonical variates, as the number of canonical variates cannot exceed the minimum of the number of dependent or independent variable, and three in this case is the minimum. We assess later how many canonical variates are worth retaining based on significance tests.
+
+\begin{lstlisting}
+cca <- cancor(cbind(satisf_economycntry,satisf_nationalgovernment,satisf_democracycntry)
+    ~trust_cntrypariament+trust_legalsystem+trust_police+trust_politicians
+    +trust_politicalparties+trust_EUparliament+trust_UN, data=data_standardized)
+cca$structure$X.xscores
+cca$structure$Y.yscores
+\end{lstlisting}
+
+\begin{table}[H] \centering 
+\begin{tabular}{@{\extracolsep{5pt}} ccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Independent variable & Xcan1 $(u_1)$ & Xcan2 $(u_2)$ & Xcan3 $(u_3)$ \\ 
+\hline \\[-1.8ex] 
+\textit{trust\_cntryparliament} & -0.943 & -0.150 & -0.152 \\ 
+\textit{trust\_legalsystem} & -0.842 & 0.4448 & 0.018 \\
+\textit{trust\_police} & -0.628 & 0.358 & -0.100 \\
+\textit{trust\_politicians} & -0.898 & -0.227 & 0.182 \\
+\textit{trust\_politicalparties} & -0.877 & -0.068 & 0.426 \\
+\textit{trust\_EUparliament} & -0.658 & 0.012 & -0.318 \\
+\textit{trust\_UN} & -0.615 & 0.330 & -0.232 \\
+\hline \\[-1.8ex] 
+\end{tabular}
+\caption{Loadings of independent variables on canonical variates $u_1$, $u_2$, $u_3$}
+\label{tab:Load_ind1} 
+\end{table}
+
+\begin{table}[H] \centering 
+\begin{tabular}{@{\extracolsep{5pt}} ccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Dependent variable & Ycan1 $(t_1)$ & Ycan2 $(t_2)$ & Ycan3 $(t_3)$\\ 
+\hline \\[-1.8ex] 
+\textit{satisf\_economycntry} & -0.769 & -0.064 & 0.636 \\ 
+\textit{satisf\_nationalgovernment} & -0.903 & -0.428 & -0.040 \\
+\textit{satisf\_democracycntry} & -0.928 & 0.359 & -0.098 \\
+\hline \\[-1.8ex] 
+\end{tabular}
+\caption{Loadings of dependent variables on canonical variates $t_1$, $t_2$, $t_3$} 
+\label{tab:Load_dep1} 
+\end{table}
+
+The redundancies for the dependent canonical variates $t_1$, $t_2$, and $t_3$ can be utilized along with the cumulative redundancy to see how much of the variance in $Y$ is explained by each canonical variate. 
+\begin{lstlisting}
+cor_squared <- cca$cancor^2
+vart_over_varY <- apply(cca$structure$Y.yscores^2,2,sum)
+vart_over_varY = vart_over_varY/(dim(cca$structure$Y.yscores)[1])
+y_redundancies <- redundancies$Ycan.redun
+redundancies_table <- cbind(cor_squared,vart_over_varY,y_redundancies,
+    cumulative=cumsum(y_redundancies))
+redundancies_table
+\end{lstlisting}
+\begin{table}[H] \centering 
+\begin{tabular}{@{\extracolsep{5pt}} ccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Canonical variate & Y redundancies & Cumulative redundancies\\ 
+\hline \\[-1.8ex] 
+$u_1$ & 0.41190 & 0.41190 \\
+$u_2$ &  0.00229 & 0.41419 \\
+$u_3$ & 0.00045 & 0.41464 \\ 
+\hline \\[-1.8ex] 
+\end{tabular}
+\caption{Redundancies for canonical variates $t_1$, $t_2$, and $t_3$} 
+\label{tab:redundancies} 
+\end{table}
+
+From the table, it is clear that the second and third canonical variates add very little
+explanation of the variance in the dependent variables by U of the corresponding canonical variate.  In total, using all three canonical variates, the independent variables explain 41.46\% of the variance in the dependent variables. However, this is only marginally better than 41.19\%, which is the percentage of variance explained in the dependent variables if only the first canonical variate was chosen. To get a better idea which canonical variates might be worth retaining, a hypothesis test is carried out using Wilk's lambda at a significance level of 0.05.
+\begin{lstlisting}
+summary(cca)
+\end{lstlisting}
+\,
+\begin{table}[!htbp] \centering 
+\begin{tabular}{@{\extracolsep{5pt}} cccccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ \# & CanR & LR test stat & approx F & numDF & denDF & Pr(> F) \\
+\hline \\[-1.8ex] 
+1 & 0.73812 & 0.44385 & 135.464 & 21 & 8701.1 & < \num{2.2e-16}\\
+2 & 0.14731 & 0.97511 & 6.408 & 12 & 6062.0 & \num{1.936e-11}\\
+3 & 0.05713 & 0.99674 & 1.986 & 5 & 3032.0 & 0.07759 \\ 
+\hline \\[-1.8ex] 
+\end{tabular}
+\caption{Hypothesis tests for canonical variates} 
+\label{tab:hyp_canon} 
+\end{table} 
+
+
+The null hypothesis that all canonical correlations are zero is rejected at the first 
+variate at a 95\% confidence level, and for the last two variates at the 
+second variate, but the null hypothesis is not rejected at the third variate, 
+indicating that the correlation between the third pair of canonical variates is 
+not significantly different from zero. We can conclude that the first two 
+canonical variates are significant by the Wilk's lambda test. It was clear from the redundancies table that the first canonical variate would be significant, but the value of the hypothesis test is that it shows that the second canonical variate is also significant. This was not clear from the redundancies table, because it has a very small contribution in comparison to the first canonical variate.
+Using the first two canonical variates, we can say that $41.19\%+0.22\%=41.42\%$ of
+variance in the Y variables can be explained by the X variables.
+\,\,
+
+Returning to the tables of loadings of the independent and dependent variables on the canonical variates $U_i$ and $T_i$, respectively, we can view them without the third canonical variate. Since the third canonical variate is not significant and it has been discarded, it would not be sensible to interpret the loadings with this variate included. 
+
+\begin{table}[H] \centering 
+\begin{tabular}{@{\extracolsep{5pt}} ccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Independent variable & Xcan1 $(u_1)$ & Xcan2 $(u_2)$\\ 
+\hline \\[-1.8ex] 
+\textit{trust\_cntryparliament} & -0.943 & -0.150 \\ 
+\textit{trust\_legalsystem} & -0.842 & 0.4448  \\
+\textit{trust\_police} & -0.628 & 0.358  \\
+\textit{trust\_politicians} & -0.898 & -0.227  \\
+\textit{trust\_politicalparties} & -0.877 & -0.068  \\
+\textit{trust\_EUparliament} & -0.658 & 0.012  \\
+\textit{trust\_UN} & -0.615 & 0.330  \\
+\hline \\[-1.8ex] 
+\end{tabular}
+\caption{Loadings of independent variables on canonical variates $u_1$, $u_2$} 
+\label{tab:Load_ind2} 
+\end{table}
+
+\begin{table}[H] \centering 
+\begin{tabular}{@{\extracolsep{5pt}} ccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+Dependent variable & Ycan1 $(t_1)$ & Ycan2 $(t_2)$ \\ 
+\hline \\[-1.8ex] 
+\textit{satisf\_economycntry} & -0.769 & -0.064  \\ 
+\textit{satisf\_nationalgovernment} & -0.903 & -0.428  \\
+\textit{satisf\_democracycntry} & -0.928 & 0.359  \\
+\hline \\[-1.8ex] 
+\end{tabular}
+\caption{Loadings of dependent variables on canonical variates $t_1$, $t_2$} 
+\label{tab:Load_dep2} 
+\end{table}
+
+The loadings for $u_1$ indicate that a high score on $u_1$ is associated with
+low trust in police, the legal system, and political systems at the national and
+international level. Looking at $t_1$, a high score on this canonical 
+variate corresponds to low satisfaction in the economy, national government, 
+lawmaking, and democracy in the respondent's country. A high score on this pair of 
+canonical variates then indicates low trust and low satisfaction in the respondent's
+country and continent's institutions. 
+\,\,
+
+The loadings for $u_2$ indicate that a high score on $u_2$ is associated with
+apathy or weak to moderate trust in institutions. These respondents have moderate feelings that the political leaders and lawmakers are untrustworthy and weak to moderate trust in the police, legal system and United Nations.
+Respondents receive a high score on $t_2$ when they are relatively neutral on 
+their satisfaction of the economy, are moderately unsatisfied with the national
+government, and are moderately satisfied with the democratic system. A high
+score on this pair of canonical variates therefore corresponds to respondents
+who do not have strong feelings on institutions,
+but are moderately dissatisfied with politicians and the national government.
+This could reflect those who are hoping for a change of the governing party in their country. Another group of people who could have a high score on these canonical variates are those who simply choose not to be active in these systems and therefore do not have strong feelings about institutions and democracy.
+
+ 
+
+Figure 1 shows a clear pattern in the scores of each country on $u_1$ and $t_1$. Sweden generally scores low on both, while Poland scores high on both. This can be interpreted as follows: respondents from Sweden have higher trust in institutions and greater satisfaction with their government than respondents from Poland. This is because respondents from Sweden tended to score low on the factors, meaning they score highly on the "opposite" of what the factors represent relative to respondents from Poland. Figure 2, in contrast, shows much less separation between respondents of each country. Neither country tends to score higher on $u_2$ or $t_2$ than the other. Most of the data is in clustered bands in the centre such that respondents score around zero on $t_2$ but have some variation on $u_2$. These bands are the respondents who, for example, are opinionated on their democratic systems resulting in a score around zero on $t_2$ (since a high score represents apathy), but do not have strong feelings about institutions and therefore score highly on $u_2$, giving the horizontal length of the bands. 
+
+\begin{lstlisting}
+sweden_cv1 <- data.frame(cbind(cca$scores$X[data_standardized$Country=="Sweden",1],
+    cca$scores$Y[data_standardized$Country=="Sweden",1]))
+poland_cv1 <- data.frame(cbind(cca$scores$X[data_standardized$Country=="Poland",1],
+    cca$scores$Y[data_standardized$Country=="Poland",1]))
+sweden_cv2 <- data.frame(cbind(cca$scores$X[data_standardized$Country=="Sweden",2],
+    cca$scores$Y[data_standardized$Country=="Sweden",2]))
+poland_cv2 <- data.frame(cbind(cca$scores$X[data_standardized$Country=="Poland",2],
+    cca$scores$Y[data_standardized$Country=="Poland",2]))
+ggplot code omitted for space
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=.67 \textwidth]{plot1.png}
+    \caption{Respondent scores on first pair of canonical variates by country}
+    \label{fig:plot1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=.67 \textwidth]{plot2.png}
+    \caption{Respondent scores on second pair of canonical variates by country}
+    \label{fig:plot2}
+\end{figure}
